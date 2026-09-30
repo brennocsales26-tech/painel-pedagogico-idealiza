@@ -194,6 +194,48 @@ body{padding-top:env(safe-area-inset-top,0px);}
 .user-row button{background:none;border:none;color:var(--red);font-weight:700;font-size:11px;
   cursor:pointer;font-family:inherit;}
 
+/* Idealiza Neon Academy — camada visual do redesign */
+body{background:
+  radial-gradient(circle at 8% 8%,rgba(8,199,232,.10),transparent 24rem),
+  radial-gradient(circle at 92% 28%,rgba(242,214,0,.08),transparent 20rem),
+  var(--bg);}
+.hero{isolation:isolate;box-shadow:0 18px 44px rgba(6,43,135,.20);}
+.hero::after{box-shadow:0 0 70px rgba(8,199,232,.22);animation:idealiza-drift 9s ease-in-out infinite alternate;}
+.hero::before{box-shadow:0 0 55px rgba(242,214,0,.22);animation:idealiza-drift 11s ease-in-out infinite alternate-reverse;}
+.brandrow .logo{border:1px solid rgba(255,255,255,.75);box-shadow:0 8px 26px rgba(0,0,0,.20),0 0 0 4px rgba(8,199,232,.12);transition:transform .25s ease,box-shadow .25s ease;}
+.brandrow .logo:hover{transform:translateY(-2px) rotate(-1deg);box-shadow:0 12px 30px rgba(0,0,0,.24),0 0 0 5px rgba(242,214,0,.18);}
+.stats{max-width:930px;margin-left:auto;margin-right:auto;}
+.stat{border:1px solid rgba(255,255,255,.9);position:relative;overflow:hidden;transition:transform .22s ease,box-shadow .22s ease;animation:idealiza-rise .55s both;}
+.stat:nth-child(2){animation-delay:.05s}.stat:nth-child(3){animation-delay:.1s}.stat:nth-child(4){animation-delay:.15s}.stat:nth-child(5){animation-delay:.2s}
+.stat::after{content:"";position:absolute;inset:auto -20% -70% 20%;height:90px;background:rgba(8,199,232,.08);transform:rotate(-8deg);}
+.stat:hover{transform:translateY(-4px);box-shadow:0 12px 26px rgba(6,43,135,.14);}
+.searchbar{background:rgba(255,255,255,.70);border:1px solid rgba(217,229,245,.9);border-radius:18px;padding:12px;margin:4px 0 10px;box-shadow:0 8px 22px rgba(6,43,135,.06);backdrop-filter:blur(10px);}
+.searchbar input{border-color:transparent;background:rgba(244,249,255,.72);transition:border-color .2s ease,box-shadow .2s ease,background .2s ease;}
+.searchbar input:focus{background:#fff;box-shadow:0 0 0 4px rgba(8,199,232,.12);}
+.filters,.tabs{scrollbar-width:none;}
+.chip,.tab{transition:transform .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease;}
+.chip:hover,.tab:hover{transform:translateY(-2px);border-color:var(--teal);box-shadow:0 5px 14px rgba(8,199,232,.14);}
+.turma{border-color:rgba(217,229,245,.95);box-shadow:0 8px 24px rgba(6,43,135,.07);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;animation:idealiza-rise .5s both;}
+.turma:hover{transform:translateY(-3px);border-color:rgba(8,199,232,.55);box-shadow:0 14px 30px rgba(6,43,135,.12);}
+.turma-head{background:linear-gradient(110deg,rgba(21,94,229,.08),rgba(8,199,232,.08));border-bottom:1px solid rgba(8,199,232,.10);}
+.aluno{transition:background .2s ease,padding-left .2s ease;}
+.aluno:hover{background:linear-gradient(90deg,rgba(8,199,232,.045),transparent 72%);padding-left:19px;}
+.edit-btn,.savebtn,.gate-btn,.modal-btn.save{background:linear-gradient(110deg,var(--navy2),var(--teal-d));box-shadow:0 7px 18px rgba(0,127,206,.22);transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;}
+.edit-btn:hover,.savebtn:hover,.gate-btn:hover,.modal-btn.save:hover{transform:translateY(-2px);filter:saturate(1.15);box-shadow:0 11px 23px rgba(0,127,206,.30);}
+.savebtn{background:linear-gradient(110deg,var(--teal-d),var(--teal));}
+.menu-btn{transition:transform .2s ease,box-shadow .2s ease;}
+.menu-btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.20);}
+.menu-dropdown{animation:idealiza-menu .18s ease both;transform-origin:top right;}
+.modal-box{border:1px solid rgba(255,255,255,.75);box-shadow:0 24px 70px rgba(6,43,135,.30);animation:idealiza-modal .22s ease both;}
+.gate-box{border:1px solid rgba(255,255,255,.75);box-shadow:0 25px 75px rgba(6,43,135,.35);animation:idealiza-modal .35s ease both;}
+@keyframes idealiza-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes idealiza-modal{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes idealiza-menu{from{opacity:0;transform:scale(.96) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes idealiza-drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(-14px,8px,0)}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important;}
+}
+
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#0e1520; --card:#161f2c; --ink:#e8edf5; --sub:#8b97a8; --line:#25303f;
