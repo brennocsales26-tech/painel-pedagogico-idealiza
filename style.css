@@ -240,6 +240,30 @@ body{background:
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important;}
 }
 
+/* Tela de acesso: primeiro impacto visual do novo produto */
+.gate{overflow:hidden;background:
+  radial-gradient(circle at 18% 18%,rgba(8,199,232,.24),transparent 23rem),
+  radial-gradient(circle at 86% 78%,rgba(242,214,0,.12),transparent 20rem),
+  linear-gradient(135deg,#020f36 0%,#062b87 54%,#007fce 140%);}
+.gate::before{content:"";position:absolute;inset:-20%;opacity:.18;pointer-events:none;background-image:
+  linear-gradient(rgba(8,199,232,.26) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(8,199,232,.26) 1px,transparent 1px);
+  background-size:46px 46px;transform:perspective(500px) rotateX(58deg) translateY(35%);animation:idealiza-grid 18s linear infinite;}
+.gate::after{content:"";position:absolute;width:360px;height:360px;border:1px solid rgba(8,199,232,.28);border-radius:50%;box-shadow:0 0 70px rgba(8,199,232,.20),inset 0 0 60px rgba(8,199,232,.10);top:-150px;right:-80px;animation:idealiza-orbit 16s linear infinite;}
+.gate-box{position:relative;z-index:1;background:rgba(3,25,70,.78);border:1px solid rgba(255,255,255,.22);border-top-color:rgba(8,199,232,.72);border-radius:26px;padding:34px 28px 28px;max-width:370px;box-shadow:0 30px 90px rgba(0,0,0,.40),0 0 0 1px rgba(8,199,232,.08);backdrop-filter:blur(18px);}
+.gate-box::before{content:"IDEALIZA  /  CENTRAL PEDAGÓGICA";display:block;color:var(--teal);font-size:9px;font-weight:800;letter-spacing:2px;margin-bottom:20px;}
+.gate-box img{height:62px;margin-bottom:22px;filter:drop-shadow(0 5px 14px rgba(8,199,232,.28));}
+.gate-box h2{font-size:20px;color:#fff;letter-spacing:-.3px;}
+.gate-box p{color:rgba(255,255,255,.68);}
+.gate-box input{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff;transition:border-color .2s ease,background .2s ease,box-shadow .2s ease;}
+.gate-box input::placeholder{color:rgba(255,255,255,.52);}
+.gate-box input:focus{background:rgba(255,255,255,.13);border-color:var(--teal);box-shadow:0 0 0 4px rgba(8,199,232,.13);}
+.gate-btn{background:linear-gradient(110deg,var(--teal),var(--navy2));box-shadow:0 10px 24px rgba(8,199,232,.22);}
+.gate-box .settings-link{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16);color:#fff;}
+.gate-box .settings-link:hover{background:rgba(255,255,255,.14);}
+@keyframes idealiza-grid{from{background-position:0 0;transform:perspective(500px) rotateX(58deg) translateY(35%)}to{background-position:0 46px;transform:perspective(500px) rotateX(58deg) translateY(40%)}}
+@keyframes idealiza-orbit{to{transform:rotate(360deg)}}
+
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#0e1520; --card:#161f2c; --ink:#e8edf5; --sub:#8b97a8; --line:#25303f;
