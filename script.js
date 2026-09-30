@@ -5,6 +5,9 @@ const STORAGE_KEYS = {
 
 const dataStoreEl = document.getElementById('dataStore');
 const accountsStoreEl = document.getElementById('accountsStore');
+const supabaseClient = window.supabase && window.IDEALIZA_SUPABASE
+  ? window.supabase.createClient(window.IDEALIZA_SUPABASE.url, window.IDEALIZA_SUPABASE.publishableKey)
+  : null;
 
 function safeParse(text, fallback) {
   try {
@@ -53,7 +56,7 @@ function normalizeData(data) {
 const embeddedData = safeParse(dataStoreEl.textContent, {});
 const embeddedAccounts = safeParse(accountsStoreEl.textContent, {});
 const RAW = normalizeData(loadPersisted(STORAGE_KEYS.data, embeddedData));
-const ACCOUNTS = loadPersisted(STORAGE_KEYS.accounts, embeddedAccounts);
+let ACCOUNTS = loadPersisted(STORAGE_KEYS.accounts, embeddedAccounts);
 const DAYS = Object.keys(RAW);
 const FIXED_TURMAS = [
   ['SEGUNDA-FEIRA', 'SEGUNDA 14 HORAS'],
@@ -78,6 +81,8 @@ let canEdit = true;
 let artifactApi = null;
 let statusFilter = 'TODOS';
 let currentUser = null;
+let currentProfile = null;
+let remoteMode = Boolean(supabaseClient);
 let pendingPhoto = '';
 let stuCtx = null;
 
@@ -102,6 +107,43 @@ const usersModal = document.getElementById('usersModal');
 const addModal = document.getElementById('addModal');
 const studentModal = document.getElementById('studentModal');
 const modalAvatar = document.getElementById('modalAvatar');
+
+function rawFromRemoteRows(rows) {
+  const data = Object.fromEntries(DAYS.map(day => [day, {}]));
+  rows.forEach(row => {
+    if (!data[row.day]) data[row.day] = {};
+    if (!data[row.day][row.schedule]) data[row.day][row.schedule] = [];
+    data[row.day][row.schedule].push([
+      row.name, row.module || '', row.start_date || '', row.due_date || '',
+      row.status || 'EM DIA', row.absent ? 'SIM' : 'NAO', row.notes || '',
+      Array.isArray(row.history) ? row.history : [], row.id
+    ]);
+  });
+  return normalizeData(data);
+}
+
+async function hydrateRemoteState(userId) {
+  if (!supabaseClient) return false;
+  const [profilesResult, studentsResult] = await Promise.all([
+    supabaseClient.from('profiles').select('id,display_name,role,photo_url').limit(500),
+    supabaseClient.from('students').select('id,name,day,schedule,module,start_date,due_date,status,absent,notes,history').limit(1000)
+  ]);
+  if (profilesResult.error) throw profilesResult.error;
+  if (studentsResult.error) throw studentsResult.error;
+  const nextAccounts = {};
+  (profilesResult.data || []).forEach(profile => {
+    nextAccounts[profile.display_name] = {
+      id: profile.id,
+      email: '',
+      role: profile.role,
+      photo: profile.photo_url || ''
+    };
+    if (profile.id === userId) currentProfile = profile;
+  });
+  ACCOUNTS = nextAccounts;
+  restoreObject(RAW, rawFromRemoteRows(studentsResult.data || []));
+  return true;
+}
 
 function escapeHTML(value) {
   return String(value ?? '')
@@ -394,6 +436,36 @@ async function persistAll() {
   dataStoreEl.textContent = dataJSON;
   accountsStoreEl.textContent = accountsJSON;
 
+  if (supabaseClient && currentProfile) {
+    const rows = [];
+    DAYS.forEach(day => {
+      Object.entries(RAW[day] || {}).forEach(([schedule, records]) => {
+        records.forEach(record => {
+          const row = {
+            name: record[0] || 'Aluno sem nome', day, schedule,
+            module: record[1] || '', start_date: record[2] || '', due_date: record[3] || '',
+            status: record[4] || 'EM DIA', absent: record[5] === 'SIM',
+            notes: record[6] || '', history: Array.isArray(record[7]) ? record[7] : [],
+            updated_by: currentProfile.id
+          };
+          if (record[8]) row.id = record[8];
+          rows.push(row);
+        });
+      });
+    });
+    const { error: studentsError } = await supabaseClient.from('students').upsert(rows, { onConflict: 'id' });
+    if (studentsError) throw studentsError;
+    const account = currentUser && ACCOUNTS[currentUser];
+    if (account) {
+      const { error: profileError } = await supabaseClient.from('profiles').update({
+        display_name: currentUser, photo_url: account.photo || ''
+      }).eq('id', currentProfile.id);
+      if (profileError) throw profileError;
+    }
+    await hydrateRemoteState(currentProfile.id);
+    remoteSaved = true;
+  }
+
   if (artifactApi && typeof artifactApi.publish === 'function') {
     try {
       await artifactApi.publish('<!DOCTYPE html>\n' + document.documentElement.outerHTML);
@@ -439,7 +511,19 @@ function findAccountName(input) {
   return Object.keys(ACCOUNTS).find(name => name.toLocaleLowerCase('pt-BR') === normalized) || '';
 }
 
-function checkLogin() {
+async function checkLogin() {
+  if (supabaseClient) {
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (!error && data.session) {
+      try {
+        await hydrateRemoteState(data.session.user.id);
+        if (currentProfile) showLoggedIn(currentProfile.display_name);
+      } catch (remoteError) {
+        document.getElementById('gateErr').textContent = 'Não foi possível carregar os dados do banco.';
+      }
+    }
+    return;
+  }
   let saved = '';
   try {
     saved = sessionStorage.getItem('idealiza_user') || '';
@@ -447,6 +531,14 @@ function checkLogin() {
     saved = '';
   }
   if (saved && ACCOUNTS[saved]) showLoggedIn(saved);
+}
+
+async function loginWithSupabase(email, password) {
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  await hydrateRemoteState(data.user.id);
+  if (!currentProfile) throw new Error('Perfil do usuário não encontrado.');
+  showLoggedIn(currentProfile.display_name);
 }
 
 function closeProfile() {
@@ -474,6 +566,7 @@ function openProfile() {
 function openUserManager() {
   if (!isAdmin()) return;
   document.getElementById('newUserName').value = '';
+  document.getElementById('newUserEmail').value = '';
   document.getElementById('newUserPass').value = '';
   document.getElementById('newUserRole').value = 'professor';
   document.getElementById('usersMsg').textContent = '';
@@ -601,9 +694,23 @@ function bindEvents() {
     }
   });
 
-  document.getElementById('gateBtn').addEventListener('click', () => {
-    const typedName = document.getElementById('gateUser').value;
+  document.getElementById('gateBtn').addEventListener('click', async () => {
+    const typedName = document.getElementById('gateUser').value.trim();
     const password = document.getElementById('gatePass').value;
+    if (supabaseClient) {
+      if (!typedName || !password) {
+        document.getElementById('gateErr').textContent = 'Informe e-mail e senha.';
+        return;
+      }
+      document.getElementById('gateErr').textContent = 'Entrando...';
+      try {
+        await loginWithSupabase(typedName, password);
+        document.getElementById('gateErr').textContent = '';
+      } catch (error) {
+        document.getElementById('gateErr').textContent = 'E-mail ou senha incorretos.';
+      }
+      return;
+    }
     const accountName = findAccountName(typedName);
     const account = accountName ? ACCOUNTS[accountName] : null;
     if (account && account.password === password) {
@@ -613,6 +720,20 @@ function bindEvents() {
     } else {
       document.getElementById('gateErr').textContent = 'Nome ou senha incorretos.';
     }
+  });
+
+  document.getElementById('gateSignup').addEventListener('click', async () => {
+    if (!supabaseClient) return;
+    const email = document.getElementById('gateUser').value.trim();
+    const password = document.getElementById('gatePass').value;
+    if (!email || password.length < 6) {
+      document.getElementById('gateErr').textContent = 'Informe e-mail e uma senha com pelo menos 6 caracteres.';
+      return;
+    }
+    const { error } = await supabaseClient.auth.signUp({ email, password, options: { data: { display_name: email.split('@')[0] } } });
+    document.getElementById('gateErr').textContent = error
+      ? 'Não foi possível criar a conta. Verifique os dados.'
+      : 'Conta criada. Se solicitado, confirme o e-mail e entre novamente.';
   });
 
   ['gateUser', 'gatePass'].forEach(id => {
@@ -629,6 +750,7 @@ function bindEvents() {
   document.addEventListener('click', () => menuDropdown.classList.remove('show'));
 
   document.getElementById('menuLogout').addEventListener('click', () => {
+    if (supabaseClient) supabaseClient.auth.signOut();
     try { sessionStorage.removeItem('idealiza_user'); } catch (error) { /* sessão opcional */ }
     currentUser = null;
     heroActions.style.display = 'none';
@@ -733,16 +855,21 @@ function bindEvents() {
     }
 
     setModalMessage('profileMsg', 'Salvando...');
+    const previousUser = currentUser;
     try {
-      await persistAll();
+      if (supabaseClient && password1) {
+        const { error: passwordError } = await supabaseClient.auth.updateUser({ password: password1 });
+        if (passwordError) throw passwordError;
+      }
       currentUser = newName;
+      await persistAll();
       try { sessionStorage.setItem('idealiza_user', newName); } catch (error) { /* sessão opcional */ }
       showLoggedIn(newName);
       userAv.innerHTML = avatarHTML(newName);
       setModalMessage('profileMsg', 'Configurações atualizadas.', 'ok');
     } catch (error) {
       restoreObject(ACCOUNTS, oldAccounts);
-      currentUser = oldName;
+      currentUser = previousUser || oldName;
       setModalMessage('profileMsg', 'Não foi possível salvar agora.', 'err');
     }
   });
@@ -759,14 +886,32 @@ function bindEvents() {
       return;
     }
     const name = document.getElementById('newUserName').value.trim();
+    const email = document.getElementById('newUserEmail').value.trim();
     const password = document.getElementById('newUserPass').value.trim();
     const role = document.getElementById('newUserRole').value;
-    if (!name || !password) {
-      setModalMessage('usersMsg', 'Preencha nome e senha.', 'err');
+    if (!name || !email || !password) {
+      setModalMessage('usersMsg', 'Preencha nome, e-mail e senha.', 'err');
       return;
     }
-    if (password.length < 3) {
-      setModalMessage('usersMsg', 'A senha deve ter pelo menos 3 caracteres.', 'err');
+    if (password.length < 6) {
+      setModalMessage('usersMsg', 'A senha deve ter pelo menos 6 caracteres.', 'err');
+      return;
+    }
+    if (supabaseClient) {
+      setModalMessage('usersMsg', 'Criando usuário...');
+      const { error } = await supabaseClient.functions.invoke('admin-create-user', {
+        body: { display_name: name, email, password, role }
+      });
+      if (error) {
+        setModalMessage('usersMsg', error.message || 'Não foi possível criar o usuário.', 'err');
+        return;
+      }
+      await hydrateRemoteState(currentProfile.id);
+      renderUsersList();
+      document.getElementById('newUserName').value = '';
+      document.getElementById('newUserEmail').value = '';
+      document.getElementById('newUserPass').value = '';
+      setModalMessage('usersMsg', 'Usuário adicionado!', 'ok');
       return;
     }
     if (findAccountName(name)) {
@@ -780,6 +925,7 @@ function bindEvents() {
       await persistAll();
       renderUsersList();
       document.getElementById('newUserName').value = '';
+      document.getElementById('newUserEmail').value = '';
       document.getElementById('newUserPass').value = '';
       setModalMessage('usersMsg', 'Usuário adicionado!', 'ok');
     } catch (error) {

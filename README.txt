@@ -7,13 +7,13 @@ Arquivos:
 - script.js    → lógica (JavaScript)
 - logo.png     → logotipo da Idealiza
 
-Basta abrir o index.html em qualquer navegador. Os dados dos alunos e
-das contas já vêm embutidos no próprio index.html.
+Basta abrir o index.html em qualquer navegador com internet. O painel usa
+Supabase Auth para login e PostgreSQL para compartilhar os dados entre usuários.
 
-LOGIN (pede sempre que fechar/reabrir a página):
-- Tarcisio Iure  — senha 1012   (Professor)
-- Brenno Sales   — senha 2601   (Administrador)
-- Vitor Thadeu   — senha 1902   (Professor)
+LOGIN:
+- Use seu e-mail e senha do Supabase.
+- A primeira conta criada recebe automaticamente o perfil Administrador.
+- Não existem senhas gravadas no código público.
 
 MENU (área "ÁREA DO USUÁRIO" no topo direito, com nome, função e foto/iniciais):
 - Clique no cartão branco com seu nome para abrir o menu.
@@ -40,10 +40,8 @@ FUNCIONALIDADES:
   aparecem no filtro "Concluídos".
 
 SALVAMENTO:
-- As alterações agora ficam salvas automaticamente no armazenamento local do navegador
-  ao usar Salvar, Adicionar aluno, Configurações ou Editar aluno.
-- O modo hospedado no Claude continua podendo publicar a versão atual quando esse recurso
-  estiver disponível.
-- Como este é um site estático, os dados ficam no navegador/dispositivo em que foram salvos;
-  para uso com vários dispositivos ou usuários simultâneos, será necessário conectar um
-  back-end e um banco de dados.
+- As alterações são salvas no PostgreSQL do Supabase ao usar Salvar, Adicionar aluno,
+  Configurações ou Editar aluno.
+- O localStorage permanece apenas como cópia de segurança local.
+- O cadastro de usuários administradores usa uma Edge Function protegida e nunca expõe
+  a chave de serviço no navegador.
