@@ -730,7 +730,14 @@ function bindEvents() {
       document.getElementById('gateErr').textContent = 'Informe e-mail e uma senha com pelo menos 6 caracteres.';
       return;
     }
-    const { error } = await supabaseClient.auth.signUp({ email, password, options: { data: { display_name: email.split('@')[0] } } });
+    const { error } = await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { display_name: email.split('@')[0] },
+        emailRedirectTo: `${window.location.origin}${window.location.pathname}`
+      }
+    });
     document.getElementById('gateErr').textContent = error
       ? 'Não foi possível criar a conta. Verifique os dados.'
       : 'Conta criada. Se solicitado, confirme o e-mail e entre novamente.';
