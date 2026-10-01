@@ -78,7 +78,6 @@ const FIXED_TURMAS = [
 let activeDay = DAYS[0] || '';
 let dirty = false;
 let canEdit = true;
-let artifactApi = null;
 let statusFilter = 'TODOS';
 let currentUser = null;
 let currentProfile = null;
@@ -499,15 +498,6 @@ async function persistAll() {
     }
     await hydrateRemoteState(currentProfile.id);
     remoteSaved = true;
-  }
-
-  if (artifactApi && typeof artifactApi.publish === 'function') {
-    try {
-      await artifactApi.publish('<!DOCTYPE html>\n' + document.documentElement.outerHTML);
-      remoteSaved = true;
-    } catch (error) {
-      lastError = error;
-    }
   }
 
   if (!localSaved && !remoteSaved) throw lastError || new Error('Não foi possível persistir os dados.');
@@ -1046,16 +1036,6 @@ function bindEvents() {
   });
 }
 
-async function connectArtifactIfAvailable() {
-  try {
-    if (window.claude && typeof window.claude.use === 'function') {
-      artifactApi = await window.claude.use('artifact');
-    }
-  } catch (error) {
-    artifactApi = null;
-  }
-}
-
 applyTheme(loadTheme());
 bindEvents();
 document.getElementById('addDia').innerHTML = DAYS
@@ -1066,6 +1046,5 @@ refreshTurmaList();
 const initialAutoLateChanges = autoAtraso();
 render();
 checkLogin();
-connectArtifactIfAvailable();
 if (initialAutoLateChanges) persistAll().catch(() => {});
 window.setInterval(persistAutomaticLateStatus, 60000);
