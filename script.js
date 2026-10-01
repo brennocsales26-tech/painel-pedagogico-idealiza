@@ -85,6 +85,7 @@ let currentProfile = null;
 let remoteMode = Boolean(supabaseClient);
 let pendingPhoto = '';
 let stuCtx = null;
+const THEME_STORAGE_KEY = 'idealiza_painel_theme';
 
 const STATUS_ORDER = ['ADIANTADO', 'EM DIA', 'ATRASADO', 'CONCLUÍDO'];
 const FILTERS = [
@@ -107,6 +108,28 @@ const usersModal = document.getElementById('usersModal');
 const addModal = document.getElementById('addModal');
 const studentModal = document.getElementById('studentModal');
 const modalAvatar = document.getElementById('modalAvatar');
+
+function applyTheme(theme) {
+  const selectedTheme = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = selectedTheme;
+  const themeButton = document.getElementById('menuTheme');
+  if (themeButton) themeButton.textContent = selectedTheme === 'dark' ? 'Modo claro' : 'Modo escuro';
+}
+
+function loadTheme() {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY) || 'light';
+  } catch (error) {
+    return 'light';
+  }
+}
+
+function toggleTheme() {
+  const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(nextTheme);
+  try { localStorage.setItem(THEME_STORAGE_KEY, nextTheme); } catch (error) { /* preferência opcional */ }
+  menuDropdown.classList.remove('show');
+}
 
 function rawFromRemoteRows(rows) {
   const data = Object.fromEntries(DAYS.map(day => [day, {}]));
@@ -759,6 +782,7 @@ function bindEvents() {
   });
 
   document.getElementById('menuProfile').addEventListener('click', openProfile);
+  document.getElementById('menuTheme').addEventListener('click', toggleTheme);
   document.getElementById('profileCancel').addEventListener('click', closeProfile);
   document.getElementById('openUserManager').addEventListener('click', openUserManager);
 
@@ -1032,6 +1056,7 @@ async function connectArtifactIfAvailable() {
   }
 }
 
+applyTheme(loadTheme());
 bindEvents();
 document.getElementById('addDia').innerHTML = DAYS
   .map(day => `<option value="${escapeHTML(day)}">${escapeHTML(day)}</option>`)
