@@ -722,27 +722,6 @@ function bindEvents() {
     }
   });
 
-  document.getElementById('gateSignup').addEventListener('click', async () => {
-    if (!supabaseClient) return;
-    const email = document.getElementById('gateUser').value.trim();
-    const password = document.getElementById('gatePass').value;
-    if (!email || password.length < 6) {
-      document.getElementById('gateErr').textContent = 'Informe e-mail e uma senha com pelo menos 6 caracteres.';
-      return;
-    }
-    const { error } = await supabaseClient.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { display_name: email.split('@')[0] },
-        emailRedirectTo: `${window.location.origin}${window.location.pathname}`
-      }
-    });
-    document.getElementById('gateErr').textContent = error
-      ? 'Não foi possível criar a conta. Verifique os dados.'
-      : 'Conta criada. Se solicitado, confirme o e-mail e entre novamente.';
-  });
-
   ['gateUser', 'gatePass'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', event => {
       if (event.key === 'Enter') document.getElementById('gateBtn').click();
