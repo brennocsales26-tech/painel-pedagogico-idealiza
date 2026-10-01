@@ -122,6 +122,11 @@ function rawFromRemoteRows(rows) {
   return normalizeData(data);
 }
 
+function countStudents(data) {
+  return Object.values(data || {}).reduce((total, classes) =>
+    total + Object.values(classes || {}).reduce((subtotal, students) => subtotal + (Array.isArray(students) ? students.length : 0), 0), 0);
+}
+
 async function hydrateRemoteState(userId) {
   if (!supabaseClient) return false;
   const [profilesResult, studentsResult] = await Promise.all([
@@ -141,7 +146,14 @@ async function hydrateRemoteState(userId) {
     if (profile.id === userId) currentProfile = profile;
   });
   ACCOUNTS = nextAccounts;
-  restoreObject(RAW, rawFromRemoteRows(studentsResult.data || []));
+  const remoteRows = studentsResult.data || [];
+  // RLS/permissões podem devolver [] mesmo com a base local preenchida.
+  // Nunca substituir alunos existentes por uma resposta remota vazia.
+  if (remoteRows.length > 0) {
+    restoreObject(RAW, rawFromRemoteRows(remoteRows));
+  } else if (countStudents(RAW) === 0 && countStudents(embeddedData) > 0) {
+    restoreObject(RAW, normalizeData(deepClone(embeddedData)));
+  }
   return true;
 }
 
