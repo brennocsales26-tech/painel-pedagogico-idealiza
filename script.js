@@ -58,20 +58,10 @@ const embeddedAccounts = safeParse(accountsStoreEl.textContent, {});
 const RAW = normalizeData(loadPersisted(STORAGE_KEYS.data, embeddedData));
 let ACCOUNTS = loadPersisted(STORAGE_KEYS.accounts, embeddedAccounts);
 const DAYS = Object.keys(RAW);
+const FIXED_HOURS = ['8 HORAS', '14 HORAS', '16 HORAS', '18 HORAS'];
 const FIXED_TURMAS = [
-  ['SEGUNDA-FEIRA', 'SEGUNDA 14 HORAS'],
-  ['SEGUNDA-FEIRA', 'SEGUNDA 16 HORAS'],
-  ['SEGUNDA-FEIRA', 'SEGUNDA 18 HORAS'],
-  ['TERÇA-FEIRA', 'TERÇA 8 HORAS'],
-  ['TERÇA-FEIRA', 'TERÇA 14 HORAS'],
-  ['QUARTA-FEIRA', 'QUARTA 8 HORAS'],
-  ['QUINTA-FEIRA', 'QUINTA 8 HORAS'],
-  ['QUINTA-FEIRA', 'QUINTA 14 HORAS'],
-  ['QUINTA-FEIRA', 'QUINTA 18 HORAS'],
-  ['SEXTA-FEIRA', 'SEXTA 8 HORAS'],
-  ['SEXTA-FEIRA', 'SEXTA 14 HORAS'],
-  ['SÁBADO', 'SÁBADO 8 HORAS'],
-  ['SÁBADO', 'SÁBADO 10 HORAS'],
+  ...['SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO']
+    .flatMap(day => FIXED_HOURS.map(hour => [day, `${day.replace('-FEIRA', '')} ${hour}`])),
   ['FLEX', 'FLEX']
 ];
 
@@ -602,10 +592,21 @@ function openUserManager() {
 
 function refreshTurmaList() {
   const day = document.getElementById('addDia').value;
-  const classes = Object.keys(RAW[day] || {});
-  document.getElementById('turmaList').innerHTML = classes
-    .map(className => `<option value="${escapeHTML(className)}">`)
+  const existingClasses = Object.keys(RAW[day] || {});
+  const fixedClasses = FIXED_TURMAS
+    .filter(([optionDay]) => optionDay === day)
+    .map(([, label]) => label);
+  const classes = [...new Set([...fixedClasses, ...existingClasses])];
+  const turmaList = document.getElementById('turmaList');
+  turmaList.innerHTML = classes
+    .map(className => `<option value="${escapeHTML(className)}">${escapeHTML(className)}</option>`)
     .join('');
+  const turmaSelect = document.getElementById('addTurma');
+  if (turmaSelect && turmaSelect.tagName === 'SELECT') {
+    turmaSelect.innerHTML = classes
+      .map(className => `<option value="${escapeHTML(className)}">${escapeHTML(className)}</option>`)
+      .join('');
+  }
 }
 
 function openAddStudent() {

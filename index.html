@@ -52,8 +52,8 @@
     <label class="field-label">Dia da semana</label>
     <select id="addDia"></select>
     <label class="field-label">Turma / horário</label>
-    <input type="text" id="addTurma" placeholder="Ex: SEGUNDA 14 HORAS" list="turmaList">
-    <datalist id="turmaList"></datalist>
+    <select id="addTurma" aria-label="Turma e horário"></select>
+    <datalist id="turmaList" hidden></datalist>
     <label class="field-label">Módulo / curso</label>
     <input type="text" id="addModulo" placeholder="Ex: EXCEL FUNDAMENTAL">
     <label class="field-label">Data de início</label>
@@ -177,6 +177,6 @@
 <script type="application/json" id="accountsStore">{}</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="script.js?v=idealiza-students-fallback-20261001-1"></script>
+<script src="script.js?v=idealiza-clean-20261001-1"></script>
 </body>
 </html>
