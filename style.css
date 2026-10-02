@@ -28,6 +28,8 @@ body{padding-top:env(safe-area-inset-top,0px);}
   box-shadow:0 6px 18px rgba(11,37,69,.08);}
 .stat b{display:block;font-size:19px;font-family:'Sora',sans-serif;}
 .stat span{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.3px;}
+.active-stat .online-status{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:5px;color:#16834b;font-size:9px;font-weight:800;letter-spacing:.2px;text-transform:uppercase;}
+.online-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.18),0 0 8px rgba(34,197,94,.65);}
 .stat.ok b{color:var(--teal-d);} .stat.late b{color:var(--red);} .stat.miss b{color:var(--amber);}
 .stat.adv b{color:#6b46c1;}
 
