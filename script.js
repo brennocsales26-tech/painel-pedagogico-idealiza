@@ -167,6 +167,10 @@ function countStudents(data) {
     total + Object.values(classes || {}).reduce((subtotal, students) => subtotal + (Array.isArray(students) ? students.length : 0), 0), 0);
 }
 
+function isActiveStudent(record) {
+  return Array.isArray(record) && record[4] !== 'CONCLUÍDO';
+}
+
 async function hydrateRemoteState(userId) {
   if (!supabaseClient) return false;
   const [profilesResult, studentsResult] = await Promise.all([
@@ -296,6 +300,7 @@ function computeStats() {
   DAYS.forEach(day => {
     Object.values(RAW[day] || {}).forEach(list => {
       list.forEach(record => {
+        if (!isActiveStudent(record)) return;
         total += 1;
         if (record[4] === 'ATRASADO') late += 1;
         else if (record[4] === 'ADIANTADO') adv += 1;
@@ -347,10 +352,10 @@ function renderContent() {
         ? students.filter(student => String(student[0] || '').toUpperCase().includes(query))
         : students.slice();
 
-      if (statusFilter === 'FALTANTE') filtered = filtered.filter(student => student[5] === 'SIM');
+      if (statusFilter === 'FALTANTE') filtered = filtered.filter(student => isActiveStudent(student) && student[5] === 'SIM');
       else if (statusFilter === 'CONCLUÍDO') filtered = filtered.filter(student => student[4] === 'CONCLUÍDO');
-      else if (statusFilter !== 'TODOS') filtered = filtered.filter(student => student[4] === statusFilter);
-      else filtered = filtered.filter(student => student[4] !== 'CONCLUÍDO');
+      else if (statusFilter !== 'TODOS') filtered = filtered.filter(student => isActiveStudent(student) && student[4] === statusFilter);
+      else filtered = filtered.filter(isActiveStudent);
 
       if (!filtered.length) return;
       any = true;
