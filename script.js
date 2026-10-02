@@ -55,7 +55,35 @@ function normalizeData(data) {
 
 const embeddedData = safeParse(dataStoreEl.textContent, {});
 const embeddedAccounts = safeParse(accountsStoreEl.textContent, {});
-const RAW = normalizeData(loadPersisted(STORAGE_KEYS.data, embeddedData));
+let scheduleMigrationChanged = false;
+
+function standardizeSchedules(data) {
+  Object.values(data || {}).forEach(classes => {
+    Object.keys(classes || {}).forEach(className => {
+      const standardizedName = String(className).replace(/\b10\s*HORAS\b/gi, '14 HORAS');
+      if (standardizedName === className) return;
+      const students = classes[className] || [];
+      if (!classes[standardizedName]) classes[standardizedName] = [];
+      classes[standardizedName].push(...students);
+      delete classes[className];
+      scheduleMigrationChanged = true;
+    });
+  });
+  return data;
+}
+
+function scheduleSortKey(className) {
+  const match = String(className).match(/\b(8|10|14|16|18)\s*HORAS\b/i);
+  return match ? Number(match[1]) : 999;
+}
+
+function sortScheduleNames(names) {
+  return names.slice().sort((left, right) =>
+    scheduleSortKey(left) - scheduleSortKey(right) || String(left).localeCompare(String(right), 'pt-BR')
+  );
+}
+
+const RAW = standardizeSchedules(normalizeData(loadPersisted(STORAGE_KEYS.data, embeddedData)));
 let ACCOUNTS = loadPersisted(STORAGE_KEYS.accounts, embeddedAccounts);
 const DAYS = Object.keys(RAW);
 const FIXED_HOURS = ['8 HORAS', '14 HORAS', '16 HORAS', '18 HORAS'];
@@ -131,7 +159,7 @@ function rawFromRemoteRows(rows) {
       Array.isArray(row.history) ? row.history : [], row.id
     ]);
   });
-  return normalizeData(data);
+  return standardizeSchedules(normalizeData(data));
 }
 
 function countStudents(data) {
@@ -164,7 +192,11 @@ async function hydrateRemoteState(userId) {
   if (remoteRows.length > 0) {
     restoreObject(RAW, rawFromRemoteRows(remoteRows));
   } else if (countStudents(RAW) === 0 && countStudents(embeddedData) > 0) {
-    restoreObject(RAW, normalizeData(deepClone(embeddedData)));
+    restoreObject(RAW, standardizeSchedules(normalizeData(deepClone(embeddedData))));
+  }
+  if (scheduleMigrationChanged) {
+    await persistAll().catch(() => {});
+    scheduleMigrationChanged = false;
   }
   return true;
 }
@@ -309,7 +341,7 @@ function renderContent() {
 
   daysToShow.forEach(day => {
     const classes = RAW[day] || {};
-    Object.keys(classes).forEach(className => {
+    sortScheduleNames(Object.keys(classes)).forEach(className => {
       const students = classes[className];
       let filtered = query
         ? students.filter(student => String(student[0] || '').toUpperCase().includes(query))
@@ -596,7 +628,7 @@ function refreshTurmaList() {
   const fixedClasses = FIXED_TURMAS
     .filter(([optionDay]) => optionDay === day)
     .map(([, label]) => label);
-  const classes = [...new Set([...fixedClasses, ...existingClasses])];
+  const classes = sortScheduleNames([...new Set([...fixedClasses, ...existingClasses])]);
   const turmaList = document.getElementById('turmaList');
   turmaList.innerHTML = classes
     .map(className => `<option value="${escapeHTML(className)}">${escapeHTML(className)}</option>`)
