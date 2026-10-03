@@ -294,7 +294,6 @@ function computeStats() {
   let total = 0;
   let ok = 0;
   let late = 0;
-  let adv = 0;
   let miss = 0;
   DAYS.forEach(day => {
     Object.values(RAW[day] || {}).forEach(list => {
@@ -302,14 +301,12 @@ function computeStats() {
         if (!isActiveStudent(record)) return;
         total += 1;
         if (record[4] === 'ATRASADO') late += 1;
-        else if (record[4] === 'ADIANTADO') adv += 1;
         else ok += 1;
         if (record[5] === 'SIM') miss += 1;
       });
     });
   });
   document.getElementById('st-total').textContent = total;
-  document.getElementById('st-adv').textContent = adv;
   document.getElementById('st-ok').textContent = ok;
   document.getElementById('st-late').textContent = late;
   document.getElementById('st-miss').textContent = miss;
