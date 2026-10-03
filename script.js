@@ -100,7 +100,6 @@ let statusFilter = 'TODOS';
 let currentUser = null;
 let currentProfile = null;
 let remoteMode = Boolean(supabaseClient);
-let remoteStudentsReadable = false;
 let pendingPhoto = '';
 let stuCtx = null;
 const THEME_STORAGE_KEY = 'idealiza_painel_theme';
@@ -108,7 +107,6 @@ const THEME_STORAGE_KEY = 'idealiza_painel_theme';
 const STATUS_ORDER = ['ADIANTADO', 'EM DIA', 'ATRASADO', 'CONCLUÍDO'];
 const FILTERS = [
   { key: 'TODOS', label: 'Todos', cls: '' },
-  { key: 'ADIANTADO', label: 'Adiantados', cls: 'adv' },
   { key: 'EM DIA', label: 'Em dia', cls: 'ok' },
   { key: 'ATRASADO', label: 'Atrasados', cls: 'late' },
   { key: 'CONCLUÍDO', label: 'Concluídos', cls: '' },
@@ -195,13 +193,9 @@ async function hydrateRemoteState(userId) {
   // RLS/permissões podem devolver [] mesmo com a base local preenchida.
   // Nunca substituir alunos existentes por uma resposta remota vazia.
   if (remoteRows.length > 0) {
-    remoteStudentsReadable = true;
     restoreObject(RAW, rawFromRemoteRows(remoteRows));
   } else if (countStudents(RAW) === 0 && countStudents(embeddedData) > 0) {
-    remoteStudentsReadable = false;
     restoreObject(RAW, standardizeSchedules(normalizeData(deepClone(embeddedData))));
-  } else {
-    remoteStudentsReadable = countStudents(RAW) === 0 && countStudents(embeddedData) === 0;
   }
   if (scheduleMigrationChanged) {
     await persistAll().catch(() => {});
@@ -502,7 +496,7 @@ async function persistAll() {
   dataStoreEl.textContent = dataJSON;
   accountsStoreEl.textContent = accountsJSON;
 
-  if (supabaseClient && currentProfile && remoteStudentsReadable) {
+  if (supabaseClient && currentProfile) {
     const rows = [];
     DAYS.forEach(day => {
       Object.entries(RAW[day] || {}).forEach(([schedule, records]) => {
@@ -756,7 +750,7 @@ function bindEvents() {
     try {
       const result = await persistAll();
       dirty = false;
-      message.textContent = result.remoteSaved ? 'Salvo no banco de dados.' : 'Salvo neste navegador; o banco não confirmou acesso.';
+      message.textContent = result.remoteSaved ? 'Salvo com sucesso.' : 'Salvo neste navegador.';
     } catch (error) {
       message.textContent = 'Não foi possível salvar agora. Tente novamente.';
     }

@@ -28,6 +28,8 @@ body{padding-top:env(safe-area-inset-top,0px);}
   box-shadow:0 6px 18px rgba(11,37,69,.08);}
 .stat b{display:block;font-size:19px;font-family:'Sora',sans-serif;}
 .stat span{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.3px;}
+.stat .online-status{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:3px;color:#1c9b59;font-size:9px;font-weight:800;text-transform:none;letter-spacing:0;}
+.online-status i{width:7px;height:7px;border-radius:50%;background:#25c76a;box-shadow:0 0 0 2px rgba(37,199,106,.18),0 0 8px rgba(37,199,106,.65);display:inline-block;}
 .stat.ok b{color:var(--teal-d);} .stat.late b{color:var(--red);} .stat.miss b{color:var(--amber);}
 .stat.adv b{color:#6b46c1;}
 
