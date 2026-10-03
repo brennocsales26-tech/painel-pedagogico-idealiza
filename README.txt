@@ -12,8 +12,11 @@ Supabase Auth para login e PostgreSQL para compartilhar os dados entre usuários
 
 LOGIN:
 - Use seu e-mail e senha do Supabase.
-- A primeira conta criada recebe automaticamente o perfil Administrador.
 - Não existem senhas gravadas no código público.
+- Não existe cadastro público na tela de login.
+- Novos usuários devem ser criados exclusivamente por um administrador, pelo menu
+  "Gerenciar usuários". A criação usa a Edge Function protegida
+  "admin-create-user".
 
 MENU (área "ÁREA DO USUÁRIO" no topo direito, com nome, função e foto/iniciais):
 - Clique no cartão branco com seu nome para abrir o menu.
@@ -43,5 +46,17 @@ SALVAMENTO:
 - As alterações são salvas no PostgreSQL do Supabase ao usar Salvar, Adicionar aluno,
   Configurações ou Editar aluno.
 - O localStorage permanece apenas como cópia de segurança local.
-- O cadastro de usuários administradores usa uma Edge Function protegida e nunca expõe
-  a chave de serviço no navegador.
+- Se a consulta autenticada ao Supabase não puder ler a tabela de alunos por causa de
+  RLS/permissões, o painel preserva os dados locais e não tenta inserir os 119 alunos
+  novamente; nesse caso, a mensagem de salvamento informa que o banco não confirmou
+  o acesso.
+- A Edge Function protegida nunca expõe a chave de serviço no navegador.
+
+BANCO E SEGURANÇA:
+- A tabela `students` deve permitir leitura e gravação para usuários autenticados,
+  conforme as políticas RLS do projeto Supabase.
+- A tabela `profiles` deve permitir que o usuário autenticado leia seu próprio perfil
+  e que a Edge Function administre a criação de novos perfis.
+- Para impedir cadastro direto pela API Auth, desative "Allow new users to sign up"
+  nas configurações de autenticação do projeto Supabase. A interface do painel já
+  não oferece cadastro público.
