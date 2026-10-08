@@ -18,7 +18,15 @@
     <input id="gateUser" type="email" placeholder="Seu e-mail" autocomplete="email">
     <input id="gatePass" type="password" placeholder="Senha">
     <button class="gate-btn" id="gateBtn">Entrar</button>
+    <button class="forgot-btn" id="forgotPass" type="button">Esqueci minha senha</button>
     <div class="gate-err" id="gateErr"></div>
+    <div class="recovery-box" id="recoveryBox" style="display:none;">
+      <strong>Definir nova senha</strong>
+      <input id="recoveryPass1" type="password" placeholder="Nova senha">
+      <input id="recoveryPass2" type="password" placeholder="Confirmar nova senha">
+      <button class="gate-btn" id="recoverySave" type="button">Salvar nova senha</button>
+      <div class="gate-err" id="recoveryMsg"></div>
+    </div>
   </div>
 </div>
 
@@ -176,6 +184,6 @@
 <script type="application/json" id="accountsStore">{}</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="script.js?v=idealiza-20261008-auditoria-integrada-1"></script>
+<script src="script.js?v=idealiza-20261008-recuperacao-senha-2"></script>
 </body>
 </html>

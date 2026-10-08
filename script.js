@@ -571,8 +571,59 @@ function findAccountName(input) {
   return Object.keys(ACCOUNTS).find(name => name.toLocaleLowerCase('pt-BR') === normalized) || '';
 }
 
+function isRecoverySession() {
+  return /(?:^|&)type=recovery(?:&|$)/.test(window.location.hash.replace(/^#/, ''));
+}
+
+function showRecoveryForm() {
+  const box = document.getElementById('recoveryBox');
+  if (!box) return;
+  box.style.display = 'block';
+  document.getElementById('gateBtn').style.display = 'none';
+  document.getElementById('forgotPass').style.display = 'none';
+  document.getElementById('gateErr').textContent = 'Defina uma nova senha para continuar.';
+}
+
+async function requestPasswordReset() {
+  const email = document.getElementById('gateUser').value.trim();
+  if (!supabaseClient) {
+    document.getElementById('gateErr').textContent = 'A recuperação de senha requer o banco conectado.';
+    return;
+  }
+  if (!email) {
+    document.getElementById('gateErr').textContent = 'Informe seu e-mail para receber o link de recuperação.';
+    document.getElementById('gateUser').focus();
+    return;
+  }
+  document.getElementById('gateErr').textContent = 'Enviando link de recuperação...';
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}${window.location.pathname}`
+  });
+  document.getElementById('gateErr').textContent = error
+    ? 'Não foi possível enviar o link. Confira o e-mail e tente novamente.'
+    : 'Link enviado. Verifique seu e-mail e a caixa de spam.';
+}
+
+async function saveRecoveredPassword() {
+  const first = document.getElementById('recoveryPass1').value;
+  const second = document.getElementById('recoveryPass2').value;
+  const message = document.getElementById('recoveryMsg');
+  if (first.length < 6 || first !== second) {
+    message.textContent = first.length < 6 ? 'A senha deve ter pelo menos 6 caracteres.' : 'As senhas não coincidem.';
+    return;
+  }
+  message.textContent = 'Salvando...';
+  const { error } = await supabaseClient.auth.updateUser({ password: first });
+  if (error) { message.textContent = 'Não foi possível atualizar a senha.'; return; }
+  message.textContent = 'Senha atualizada. Você já pode entrar com a nova senha.';
+  await supabaseClient.auth.signOut();
+  window.history.replaceState({}, document.title, window.location.pathname);
+  window.setTimeout(() => window.location.reload(), 700);
+}
+
 async function checkLogin() {
   if (supabaseClient) {
+    if (isRecoverySession()) { showRecoveryForm(); return; }
     const { data, error } = await supabaseClient.auth.getSession();
     if (!error && data.session) {
       try {
@@ -792,6 +843,9 @@ function bindEvents() {
       document.getElementById('gateErr').textContent = 'Nome ou senha incorretos.';
     }
   });
+
+  document.getElementById('forgotPass').addEventListener('click', requestPasswordReset);
+  document.getElementById('recoverySave').addEventListener('click', saveRecoveredPassword);
 
   ['gateUser', 'gatePass'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', event => {

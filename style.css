@@ -32,6 +32,11 @@ body{padding-top:env(safe-area-inset-top,0px);}
 .online-status i{width:7px;height:7px;border-radius:50%;background:#25c76a;box-shadow:0 0 0 2px rgba(37,199,106,.18),0 0 8px rgba(37,199,106,.65);display:inline-block;}
 .stat.ok b{color:var(--teal-d);} .stat.late b{color:var(--red);} .stat.miss b{color:var(--amber);}
 .stat.adv b{color:#6b46c1;}
+.forgot-btn{display:block;margin:10px auto 0;background:none;border:0;color:var(--navy2);font:700 12px 'Manrope',sans-serif;text-decoration:underline;cursor:pointer;}
+.recovery-box{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);text-align:left;}
+.recovery-box strong{display:block;margin-bottom:8px;color:var(--navy);font-size:13px;text-align:center;}
+.recovery-box input{width:100%;margin:5px 0;}
+.recovery-box .gate-btn{width:100%;margin-top:7px;}
 
 .wrap{max-width:900px;margin:0 auto;padding:0 14px 40px;}
 
