@@ -596,12 +596,16 @@ async function requestPasswordReset() {
     return;
   }
   document.getElementById('gateErr').textContent = 'Enviando link de recuperação...';
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}${window.location.pathname}`
-  });
-  document.getElementById('gateErr').textContent = error
-    ? 'Não foi possível enviar o link. Confira o e-mail e tente novamente.'
-    : 'Link enviado. Verifique seu e-mail e a caixa de spam.';
+  try {
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}${window.location.pathname}`
+    });
+    document.getElementById('gateErr').textContent = error
+      ? 'O Supabase recusou o pedido. Verifique a URL autorizada e o e-mail configurado.'
+      : 'Link enviado. Verifique seu e-mail e a caixa de spam.';
+  } catch (error) {
+    document.getElementById('gateErr').textContent = 'O banco de dados está indisponível no momento. Verifique se o projeto Supabase está ativo.';
+  }
 }
 
 async function saveRecoveredPassword() {
