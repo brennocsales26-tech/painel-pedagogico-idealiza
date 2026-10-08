@@ -47,6 +47,12 @@ function normalizeData(data) {
         if (!Array.isArray(record[7])) record[7] = [];
         if (!record[5]) record[5] = 'NAO';
         if (!record[4]) record[4] = 'EM DIA';
+        if (record[4] === 'ADIANTADO') record[4] = 'EM DIA';
+        // Compatibilidade com a base antiga, que guardava FALTANTE no campo de observação.
+        if (record[6] === 'FALTANTE') {
+          record[5] = 'SIM';
+          record[6] = '';
+        }
       });
     });
   });
@@ -100,11 +106,12 @@ let statusFilter = 'TODOS';
 let currentUser = null;
 let currentProfile = null;
 let remoteMode = Boolean(supabaseClient);
+let remoteDataWarning = '';
 let pendingPhoto = '';
 let stuCtx = null;
 const THEME_STORAGE_KEY = 'idealiza_painel_theme';
 
-const STATUS_ORDER = ['ADIANTADO', 'EM DIA', 'ATRASADO', 'CONCLUÍDO'];
+const STATUS_ORDER = ['EM DIA', 'ATRASADO', 'CONCLUÍDO'];
 const FILTERS = [
   { key: 'TODOS', label: 'Todos', cls: '' },
   { key: 'EM DIA', label: 'Em dia', cls: 'ok' },
@@ -192,10 +199,15 @@ async function hydrateRemoteState(userId) {
   const remoteRows = studentsResult.data || [];
   // RLS/permissões podem devolver [] mesmo com a base local preenchida.
   // Nunca substituir alunos existentes por uma resposta remota vazia.
-  if (remoteRows.length > 0) {
+  const localCount = countStudents(RAW);
+  if (remoteRows.length > 0 && (localCount === 0 || remoteRows.length >= localCount)) {
     restoreObject(RAW, rawFromRemoteRows(remoteRows));
-  } else if (countStudents(RAW) === 0 && countStudents(embeddedData) > 0) {
+    remoteDataWarning = '';
+  } else if (remoteRows.length > 0 && remoteRows.length < localCount) {
+    remoteDataWarning = `O banco retornou ${remoteRows.length} aluno(s), mas o painel preservou ${localCount} registros para evitar perda de dados.`;
+  } else if (localCount === 0 && countStudents(embeddedData) > 0) {
     restoreObject(RAW, standardizeSchedules(normalizeData(deepClone(embeddedData))));
+    remoteDataWarning = 'O banco não retornou alunos nesta sessão; os dados preservados no painel continuam disponíveis.';
   }
   if (scheduleMigrationChanged) {
     await persistAll().catch(() => {});
@@ -254,7 +266,8 @@ function parseDateBR(value) {
   const year = Number(parts[2]);
   if (!day || !month || !year) return null;
   const date = new Date(year, month - 1, day);
-  return Number.isNaN(date.getTime()) ? null : date;
+  if (Number.isNaN(date.getTime())) return null;
+  return date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year ? date : null;
 }
 
 function autoAtraso() {
@@ -357,7 +370,6 @@ function renderContent() {
       any = true;
 
       const stats = {
-        adv: students.filter(student => student[4] === 'ADIANTADO').length,
         ok: students.filter(student => student[4] === 'EM DIA').length,
         late: students.filter(student => student[4] === 'ATRASADO').length,
         miss: students.filter(student => student[5] === 'SIM').length,
@@ -370,7 +382,6 @@ function renderContent() {
       classHead.className = 'turma-head';
       classHead.innerHTML = `<span>${escapeHTML(className)}${query ? ` · ${escapeHTML(day.replace('-FEIRA', ''))}` : ''}</span>
         <div class="turma-stats">
-          ${stats.adv ? `<span class="tadv">${stats.adv} adi.</span>` : ''}
           ${stats.ok ? `<span class="tok">${stats.ok} ok</span>` : ''}
           ${stats.late ? `<span class="tlate">${stats.late} atr.</span>` : ''}
           ${stats.miss ? `<span class="tmiss">${stats.miss} falt.</span>` : ''}
@@ -552,6 +563,7 @@ function showLoggedIn(name) {
   if (settingsUserButton) settingsUserButton.style.display = isAdmin() ? 'block' : 'none';
   heroActions.style.display = 'block';
   gate.style.display = 'none';
+  if (remoteDataWarning) document.getElementById('saveMsg').textContent = remoteDataWarning;
 }
 
 function findAccountName(input) {
